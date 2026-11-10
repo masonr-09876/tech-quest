@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Links | Tech Quest</title>
+  <meta name="description" content="All Tech Quest links in one place: socials, Discord, YouTube and more." />
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="links">
+  <header class="site-header" id="top">
+    <div class="container nav-wrap">
+      <a href="index.html" class="logo" id="logo-link" aria-label="Tech Quest home">
+        <img src="assets/logo.svg" alt="" class="logo-mark" width="32" height="32" />
+        <span>Tech<b>Quest</b></span>
+      </a>
+      <nav class="main-nav" id="main-nav" aria-label="Main">
+        <a href="index.html?type=mod#library" id="nav-mods">Mods</a>
+        <a href="index.html?type=script#library" id="nav-scripts">Scripts</a>
+        <a href="index.html?type=tool#library" id="nav-tools">Tools</a>
+        <a href="games.html" id="nav-games">Games</a>
+        <a href="links.html" id="nav-links" aria-current="page">Links</a>
+      </nav>
+      <button class="menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <section class="links-page container">
+      <img src="assets/logo.svg" alt="Tech Quest logo" class="links-avatar" width="88" height="88" />
+      <h1>Tech Quest</h1>
+      <p class="muted">Mods · Scripts · Tools · Games</p>
+
+      <div class="link-list" id="link-list"></div>
+
+      <div class="empty-panel" id="empty-links" hidden>
+        <h3>Links coming soon</h3>
+        <p>Socials, Discord and more will be listed here.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a href="index.html" class="logo" id="footer-logo"><img src="assets/logo.svg" alt="" class="logo-mark" width="24" height="24" /><span>Tech<b>Quest</b></span></a>
+      <nav class="footer-nav"><a href="index.html">Home</a><a href="games.html">Games</a><a href="links.html">Links</a></nav>
+      <p>© <span id="year"></span> Tech Quest</p>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

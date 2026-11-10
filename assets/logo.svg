@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Tech Quest">
+  <defs>
+    <linearGradient id="tq-a" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3ee6cf"/>
+      <stop offset="1" stop-color="#14a08c"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="#11151c"/>
+  <!-- crystal / quest gem -->
+  <path d="M32 9 50 25 32 55 14 25Z" fill="url(#tq-a)"/>
+  <path d="M14 25h36L32 55Z" fill="#0d6f62" opacity=".55"/>
+  <path d="M32 9 23 25 32 55 41 25Z" fill="#ffffff" opacity=".18"/>
+  <path d="M14 25h36" stroke="#11151c" stroke-width="2"/>
+  <!-- code brackets -->
+  <path d="M8 33 3 38l5 5M56 33l5 5-5 5" fill="none" stroke="#f5a83a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 -6)"/>
+  <!-- spark -->
+  <circle cx="44" cy="15" r="2.4" fill="#f5a83a"/>
+</svg>
