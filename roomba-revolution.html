@@ -256,11 +256,12 @@
             </div>
             <div class="hud-group">
               <div class="ammo-belt" id="hud-ammo"></div>
+              <button class="btn btn-small btn-ghost" id="btn-camera" type="button" title="Toggle 3D Camera (C)">Cam: 3D Follow</button>
               <button class="btn btn-small btn-ghost" id="btn-restart" type="button">Restart Stage</button>
             </div>
           </div>
 
-          <div class="canvas-wrap">
+          <div class="canvas-wrap" id="canvas-wrap">
             <canvas id="game-canvas" width="1120" height="630"></canvas>
 
             <!-- Start / Stage Intro Overlay -->
@@ -430,6 +431,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="data.js"></script>
   <script src="app.js"></script>
+  <script src="assets/three.min.js"></script>
   <script src="roomba-game.js"></script>
 </body>
 </html>
