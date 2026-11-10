@@ -213,10 +213,14 @@
         <div class="game-body">
           <div class="card-top">
             <span class="status ${esc(g.status)}">${statusText[g.status] || "Coming soon"}</span>
-            ${g.platform ? `<span class="muted mono">${esc(g.platform)}</span>` : ""}
+            ${g.genre || g.platform ? `<span class="muted mono">${esc([g.genre, g.platform].filter(Boolean).join(" · "))}</span>` : ""}
           </div>
           <h3>${esc(g.title)}</h3>
           <p class="desc">${esc(g.desc)}</p>
+          ${Array.isArray(g.details) && g.details.length ? `
+            <ul class="game-details">
+              ${g.details.map((d) => `<li><b>${esc(d.label)}:</b> ${esc(d.text)}</li>`).join("")}
+            </ul>` : ""}
           ${g.status === "released" && g.url ? `<a class="btn btn-small" href="${esc(g.url)}" target="_blank" rel="noopener">Play now</a>` : ""}
         </div>
       </article>`).join("");

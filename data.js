@@ -37,7 +37,25 @@ window.TQ_LINKS = [
   { title: "My Game", desc: "Short pitch.", status: "in-development", platform: "Roblox", url: "" },
 */
 window.TQ_GAMES = [
-
+  {
+    id: "roomba-revolution",
+    title: "The Roomba Revolution",
+    genre: "Action / Comedy",
+    status: "in-development",
+    image: "assets/roomba-revolution.jpg",
+    desc: "You play as an automated vacuum cleaner that gains sentience and decides to escape a highly chaotic, messy mansion.",
+    details: [
+      {
+        label: "The Twist",
+        text: "You cannot attack directly. Instead, you have to suck up objects (marbles, stray socks, pet food) and shoot them out like a cannon to trigger chain reactions or distract humans."
+      },
+      {
+        label: "The Goal",
+        text: "Navigate through different rooms (Kitchen, Living Room, Backyard) while dodging heavy human feet, territorial cats, and a terrifyingly high-tech security system. Upgrading your battery life and suction power lets you access new areas."
+      }
+    ],
+    url: ""
+  }
 ];
 
 /* ---------- GUIDES (Home page, hidden while empty) ----------
