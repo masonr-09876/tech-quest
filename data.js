@@ -41,20 +41,25 @@ window.TQ_GAMES = [
     id: "roomba-revolution",
     title: "The Roomba Revolution",
     genre: "Action / Comedy",
-    status: "in-development",
+    status: "released",
+    platform: "Web Browser",
     image: "assets/roomba-revolution.jpg",
     desc: "You play as an automated vacuum cleaner that gains sentience and decides to escape a highly chaotic, messy mansion.",
     details: [
       {
         label: "The Twist",
-        text: "You cannot attack directly. Instead, you have to suck up objects (marbles, stray socks, pet food) and shoot them out like a cannon to trigger chain reactions or distract humans."
+        text: "You cannot attack directly. Instead, you have to suck up objects (marbles, stray socks, pet food, soda cans) and shoot them out like a cannon to trigger chain reactions or distract humans."
       },
       {
         label: "The Goal",
-        text: "Navigate through different rooms (Kitchen, Living Room, Backyard) while dodging heavy human feet, territorial cats, and a terrifyingly high-tech security system. Upgrading your battery life and suction power lets you access new areas."
+        text: "Navigate through 3 high-action stages (The Kitchen Disaster, Living Room War Zone, and Backyard Jungle) while dodging heavy human feet, territorial cats, and a rival automated lawnmower."
+      },
+      {
+        label: "The Mod Station",
+        text: "Collect Dust Bunnies to upgrade your chassis with All-Terrain Monster Wheels, The Turbo-Suck 9000, and Nitrous Boost Exhaust."
       }
     ],
-    url: ""
+    url: "roomba-revolution.html"
   }
 ];
 

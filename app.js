@@ -221,7 +221,7 @@
             <ul class="game-details">
               ${g.details.map((d) => `<li><b>${esc(d.label)}:</b> ${esc(d.text)}</li>`).join("")}
             </ul>` : ""}
-          ${g.status === "released" && g.url ? `<a class="btn btn-small" href="${esc(g.url)}" target="_blank" rel="noopener">Play now</a>` : ""}
+          ${g.url ? `<a class="btn btn-small" href="${esc(g.url)}" ${/^https?:/i.test(g.url) ? 'target="_blank" rel="noopener"' : ""}>Play now →</a>` : ""}
         </div>
       </article>`).join("");
   }

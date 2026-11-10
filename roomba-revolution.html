@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Roomba Revolution | Play on Tech Quest</title>
+  <meta name="description" content="Play The Roomba Revolution right in your browser! Suck up marbles, socks, pet food, and soda cans to blast your way out of a chaotic mansion." />
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .game-shell {
+      position: relative;
+      background: hsl(220 20% 5%);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px -20px hsl(220 60% 2% / .9);
+      margin-top: 1.5rem;
+    }
+    .game-topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: .8rem;
+      padding: .85rem 1.2rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: .82rem;
+    }
+    .hud-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1.1rem;
+    }
+    .hud-stat {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+    }
+    .battery-bar {
+      width: 110px;
+      height: 12px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .battery-fill {
+      height: 100%;
+      width: 100%;
+      background: var(--teal);
+      transition: width .1s, background .2s;
+    }
+    .ammo-belt {
+      display: flex;
+      gap: .35rem;
+    }
+    .ammo-slot {
+      padding: .3rem .55rem;
+      border-radius: 6px;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      font-size: .76rem;
+    }
+    .ammo-slot.active {
+      background: hsl(172 60% 50% / .16);
+      border-color: var(--teal);
+      color: var(--text);
+      font-weight: 600;
+    }
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: 640px;
+      background: #141821;
+      display: grid;
+      place-items: center;
+    }
+    canvas#game-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+    .overlay-screen {
+      position: absolute;
+      inset: 0;
+      background: hsl(220 22% 6% / .88);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+      z-index: 10;
+    }
+    .overlay-screen[hidden] { display: none !important; }
+    .overlay-card {
+      max-width: 660px;
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 1.8rem;
+      box-shadow: var(--shadow);
+    }
+    .overlay-card h2 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      margin-bottom: .5rem;
+    }
+    .overlay-card p {
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+    }
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: .8rem;
+      margin: 1.2rem 0;
+      text-align: left;
+    }
+    .shop-item {
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+    }
+    .shop-item h4 { margin: 0; font-size: .98rem; color: var(--teal); }
+    .shop-item p { font-size: .82rem; margin: 0; flex: 1; }
+    .guide-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+      gap: 1.2rem;
+      margin-top: 2rem;
+    }
+    .info-card {
+      background: var(--surface);
+      border: 1px solid hsl(220 12% 18%);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      box-shadow: var(--shadow);
+    }
+    .info-card h3 { font-size: 1.2rem; margin-bottom: .75rem; }
+    .info-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: .65rem;
+      font-size: .92rem;
+      color: hsl(215 14% 76%);
+    }
+    .info-list b { color: var(--teal); }
+    .ctrl-table-wrap {
+      overflow-x: auto;
+      margin-top: 1rem;
+      background: var(--surface);
+      border: 1px solid hsl(220 12% 18%);
+      border-radius: var(--radius);
+    }
+    table.ctrl-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .9rem;
+      text-align: left;
+    }
+    .ctrl-table th, .ctrl-table td {
+      padding: .85rem 1rem;
+      border-bottom: 1px solid hsl(220 12% 18%);
+    }
+    .ctrl-table th {
+      font-family: var(--mono);
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--teal);
+      background: var(--bg-2);
+    }
+    .ctrl-table tr:last-child td { border-bottom: 0; }
+    .kbd {
+      font-family: var(--mono);
+      font-size: .78rem;
+      padding: .2rem .45rem;
+      border-radius: 5px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--amber);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body data-page="games">
+  <header class="site-header" id="top">
+    <div class="container nav-wrap">
+      <a href="index.html" class="logo" id="logo-link" aria-label="Tech Quest home">
+        <img src="assets/logo.svg" alt="" class="logo-mark" width="32" height="32" />
+        <span>Tech<b>Quest</b></span>
+      </a>
+      <nav class="main-nav" id="main-nav" aria-label="Main">
+        <a href="index.html?type=mod#library" id="nav-mods">Mods</a>
+        <a href="index.html?type=script#library" id="nav-scripts">Scripts</a>
+        <a href="index.html?type=tool#library" id="nav-tools">Tools</a>
+        <a href="games.html" id="nav-games" aria-current="page">Games</a>
+        <a href="links.html" id="nav-links">Links</a>
+      </nav>
+      <button class="menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Action / Comedy · Playable Web Game</p>
+            <h1>The Roomba Revolution</h1>
+          </div>
+          <a href="games.html" class="btn btn-ghost btn-small">← All Games</a>
+        </div>
+        <p class="muted" style="max-width: 72ch;">
+          You play as an automated vacuum cleaner that gains sentience and decides to escape a chaotic, messy mansion. Suck up marbles, socks, pet food, and soda cans, then blast them out of your exhaust cannon to trigger chain reactions, distract pets, and unlock the exit!
+        </p>
+
+        <!-- ===== Interactive Game Shell ===== -->
+        <div class="game-shell" id="game-shell">
+          <div class="game-topbar">
+            <div class="hud-group">
+              <div class="hud-stat">
+                <span>STAGE:</span>
+                <b id="hud-stage" style="color:var(--teal)">1. Kitchen Disaster</b>
+              </div>
+              <div class="hud-stat">
+                <span>BATTERY:</span>
+                <div class="battery-bar"><div class="battery-fill" id="hud-battery"></div></div>
+                <span id="hud-battery-pct">100%</span>
+              </div>
+              <div class="hud-stat">
+                <span>DUST BUNNIES:</span>
+                <b id="hud-dust" style="color:var(--amber)">0</b>
+              </div>
+            </div>
+            <div class="hud-group">
+              <div class="ammo-belt" id="hud-ammo"></div>
+              <button class="btn btn-small btn-ghost" id="btn-restart" type="button">Restart Stage</button>
+            </div>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas id="game-canvas" width="1120" height="630"></canvas>
+
+            <!-- Start / Stage Intro Overlay -->
+            <div class="overlay-screen" id="start-overlay">
+              <div class="overlay-card">
+                <p class="eyebrow" id="overlay-eyebrow">STAGE 1 · THE KITCHEN DISASTER</p>
+                <h2 id="overlay-title">Ready to Roll Out?</h2>
+                <p id="overlay-desc">
+                  Dodge the chaotic toddler and patrolling cat! Suck up <b>Marbles</b>, <b>Socks</b>, <b>Pet Food</b>, and <b>Soda Cans</b>. Blast the <b>Fridge Magnet</b> or <b>Blender</b> to drop the exit key, then escape through the right door!
+                </p>
+                <div style="display:flex; gap:.75rem; justify-content:center; flex-wrap:wrap;">
+                  <button class="btn" id="btn-start-game" type="button">Play Stage</button>
+                  <button class="btn btn-ghost" id="btn-open-shop" type="button">Mod Station (Upgrades)</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Upgrade Shop ("The Mod Station") Overlay -->
+            <div class="overlay-screen" id="shop-overlay" hidden>
+              <div class="overlay-card">
+                <p class="eyebrow">THE "MOD" STATION · DUST BUNNIES: <span id="shop-dust">0</span></p>
+                <h2>Upgrade Your Chassis</h2>
+                <p>Spend Dust Bunnies collected on the floor to upgrade your Roomba between rooms.</p>
+                <div class="shop-grid">
+                  <div class="shop-item">
+                    <h4>All-Terrain Monster Wheels</h4>
+                    <p>Eliminates hardwood drift and lets you roll through thick carpets &amp; tall grass without slowing down.</p>
+                    <button class="btn btn-small" id="buy-wheels" type="button">Buy (5 Dust)</button>
+                  </div>
+                  <div class="shop-item">
+                    <h4>The Turbo-Suck 9000</h4>
+                    <p>Doubles your vacuum pull radius and suction strength so you can pull in objects from afar.</p>
+                    <button class="btn btn-small" id="buy-suck" type="button">Buy (5 Dust)</button>
+                  </div>
+                  <div class="shop-item">
+                    <h4>Nitrous Boost Exhaust</h4>
+                    <p>Supercharges your Air Dash (L / X / Shift) with faster cooldown and extra battery capacity.</p>
+                    <button class="btn btn-small" id="buy-boost" type="button">Buy (5 Dust)</button>
+                  </div>
+                </div>
+                <button class="btn btn-ghost" id="btn-close-shop" type="button">Back to Game</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Gameplay Breakdown Sections ===== -->
+        <div class="guide-grid">
+          <article class="info-card">
+            <p class="eyebrow">🎮 The Core Gameplay Loop</p>
+            <h3>Suck, Aim &amp; Escape</h3>
+            <ul class="info-list">
+              <li><b>1. Suck:</b> Cruise over debris while holding Suck Mode to fill your "Inventory Belly." Different items have different weight and properties.</li>
+              <li><b>2. Aim &amp; Launch:</b> Use your directional laser sight to blast items out of your exhaust hatch and trigger chain reactions.</li>
+              <li><b>3. Recharge:</b> Keep an eye on your battery! Sneak onto glowing green charging docks around the room to recharge before you power down.</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow">🧹 Your Absurd Ammo Types</p>
+            <h3>Weaponize the Mess</h3>
+            <ul class="info-list">
+              <li><b>Marbles / Lego Bricks:</b> Highly bouncy. Shooting these creates a "slip zone" that makes pursuing humans comically wipe out.</li>
+              <li><b>Stray Socks:</b> Clogs up mechanical hazards like laser sensors and spinning blades, shutting them down temporarily.</li>
+              <li><b>Pet Food / Catnip:</b> Distracts territorial cats—or shoot it near a human so the cat attacks their ankles!</li>
+              <li><b>Soda Cans:</b> High-pressure rocket projectiles that smash open wooden cabinets, fragile vents, and heavy obstacles.</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow">🏡 High-Action Levels</p>
+            <h3>3 Stages to Conquer</h3>
+            <ul class="info-list">
+              <li><b>Stage 1 — The Kitchen Disaster:</b> Dodge a cereal-throwing toddler. Shoot the fridge target or noisy blender to knock loose the exit key.</li>
+              <li><b>Stage 2 — The Living Room War Zone:</b> A lazy Golden Retriever blocks the exit couch. Blast squeaky toys or pet food across the room to lure him away.</li>
+              <li><b>Stage 3 — The Backyard Jungle:</b> Tall grass drains your battery fast. Outrun the spinning automated lawnmower—your ultimate rival!</li>
+            </ul>
+          </article>
+
+          <article class="info-card">
+            <p class="eyebrow">⚡ Fun Upgrade System</p>
+            <h3>The "Mod" Station</h3>
+            <ul class="info-list">
+              <li><b>All-Terrain Monster Wheels:</b> Roll over thick carpets and muddy grass without slowing down or drifting on hardwood.</li>
+              <li><b>The Turbo-Suck 9000:</b> Increases your vacuum vortex radius, letting you pull in ammo and Dust Bunnies from further away.</li>
+              <li><b>Nitrous Boost Exhaust:</b> Fire a blast of air backward for a sudden speed burst to dodge human foot stomps.</li>
+            </ul>
+          </article>
+        </div>
+
+        <!-- ===== Control Layouts ===== -->
+        <div style="margin-top: 2.5rem;">
+          <p class="eyebrow">🕹️ Full Control Reference</p>
+          <h2>Controller, Mouse &amp; Keyboard-Only Layouts</h2>
+          <p class="muted">Both Mouse + Keyboard and Keyboard-Only controls work simultaneously in the game above—plus full Gamepad support if you plug in a controller!</p>
+
+          <div class="ctrl-table-wrap">
+            <table class="ctrl-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Controller</th>
+                  <th>Keyboard &amp; Mouse</th>
+                  <th>Keyboard-Only</th>
+                  <th>Feel &amp; Mechanics</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Movement</b></td>
+                  <td><span class="kbd">Left Stick</span></td>
+                  <td><span class="kbd">W</span> <span class="kbd">A</span> <span class="kbd">S</span> <span class="kbd">D</span></td>
+                  <td><span class="kbd">W</span> <span class="kbd">A</span> <span class="kbd">S</span> <span class="kbd">D</span></td>
+                  <td>Slight Drift: Turning on hardwood has inertia. Upgrading Monster Wheels fixes this.</td>
+                </tr>
+                <tr>
+                  <td><b>Aim Cannon</b></td>
+                  <td><span class="kbd">Right Stick</span></td>
+                  <td><span class="kbd">Move Mouse</span></td>
+                  <td><span class="kbd">←</span> <span class="kbd">↑</span> <span class="kbd">↓</span> <span class="kbd">→</span></td>
+                  <td>360° Aiming: A digital dotted line shows your projectile's trajectory.</td>
+                </tr>
+                <tr>
+                  <td><b>Suck Mode</b></td>
+                  <td><span class="kbd">LT</span> (Left Trigger)</td>
+                  <td><span class="kbd">Hold Left Click</span></td>
+                  <td><span class="kbd">Spacebar</span> or <span class="kbd">J</span></td>
+                  <td>Vacuum Pull: Creates a wind vortex in front of you that sucks in nearby debris.</td>
+                </tr>
+                <tr>
+                  <td><b>Shoot Ammo</b></td>
+                  <td><span class="kbd">RT</span> (Right Trigger)</td>
+                  <td><span class="kbd">Right Click</span></td>
+                  <td><span class="kbd">K</span> or <span class="kbd">Z</span></td>
+                  <td>Recoil Kick: Firing heavy objects pushes your Roomba backward slightly!</td>
+                </tr>
+                <tr>
+                  <td><b>Turbo Boost</b></td>
+                  <td><span class="kbd">A Button</span></td>
+                  <td><span class="kbd">Shift</span></td>
+                  <td><span class="kbd">L</span> or <span class="kbd">X</span></td>
+                  <td>Air Blast: Fires compressed air behind you for a quick dodge.</td>
+                </tr>
+                <tr>
+                  <td><b>Cycle Ammo</b></td>
+                  <td><span class="kbd">LB</span> / <span class="kbd">RB</span></td>
+                  <td><span class="kbd">Scroll Wheel</span></td>
+                  <td><span class="kbd">I</span> / <span class="kbd">O</span> or <span class="kbd">Q</span> / <span class="kbd">E</span></td>
+                  <td>Belly Selector: Swap between Marbles, Socks, Pet Food, and Soda Cans.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a href="index.html" class="logo" id="footer-logo"><img src="assets/logo.svg" alt="" class="logo-mark" width="24" height="24" /><span>Tech<b>Quest</b></span></a>
+      <nav class="footer-nav"><a href="index.html">Home</a><a href="games.html">Games</a><a href="links.html">Links</a></nav>
+      <p>© <span id="year"></span> Tech Quest</p>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="roomba-game.js"></script>
+</body>
+</html>
