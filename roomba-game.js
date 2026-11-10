@@ -1020,6 +1020,65 @@
     }
 
     renderer.render(scene, camera);
+    renderWorldLabels();
+  }
+
+  const labelContainer = document.getElementById("world-labels");
+  const projVec = new THREE.Vector3();
+
+  function projectToScreen(wx, wy, wz) {
+    projVec.set(wx, wy, wz);
+    projVec.project(camera);
+    if (projVec.z > 1) return null;
+    return {
+      x: (projVec.x * 0.5 + 0.5) * 100,
+      y: (-projVec.y * 0.5 + 0.5) * 100
+    };
+  }
+
+  function renderWorldLabels() {
+    if (!labelContainer || !stageState) return;
+    const badges = [];
+
+    // Charge Dock label
+    const dk = projectToScreen(to3DX(stageState.dock.x), 3.2, to3DZ(stageState.dock.y));
+    if (dk) badges.push({ x: dk.x, y: dk.y, text: "⚡ CHARGE DOCK", color: "#3ee6cf" });
+
+    // Target Objective label
+    if (stageState.target && stageState.target.hp > 0) {
+      const tg = projectToScreen(to3DX(stageState.target.x), 5.6, to3DZ(stageState.target.y));
+      if (tg) badges.push({ x: tg.x, y: tg.y, text: "🎯 " + stageState.target.label, color: "#f5a83a" });
+    }
+
+    // Exit Door label
+    const unlocked = !stageState.target || stageState.target.hp <= 0;
+    const ex = stageState.exit;
+    const exPt = projectToScreen(to3DX(ex.x), 6.2, to3DZ(ex.y + ex.h / 2));
+    if (exPt) {
+      badges.push({
+        x: exPt.x,
+        y: exPt.y,
+        text: unlocked ? "🚪 EXIT OPEN!" : "🔒 EXIT LOCKED",
+        color: unlocked ? "#3ee6cf" : "#ff5c5c"
+      });
+    }
+
+    // Enemies
+    for (const en of stageState.enemies) {
+      const ep = projectToScreen(to3DX(en.x), en.type === "human" ? 7.4 : 3.6, to3DZ(en.y));
+      if (ep) {
+        badges.push({
+          x: ep.x,
+          y: ep.y,
+          text: en.stun > 0 ? "💫 STUNNED!" : en.label,
+          color: en.stun > 0 ? "#94a3b8" : "#ffffff"
+        });
+      }
+    }
+
+    labelContainer.innerHTML = badges.map((b) =>
+      `<span style="position:absolute;left:${b.x.toFixed(1)}%;top:${b.y.toFixed(1)}%;transform:translate(-50%,-50%);background:rgba(15,19,26,0.78);color:${b.color};padding:2px 7px;border-radius:5px;border:1px solid ${b.color}55;white-space:nowrap;">${b.text}</span>`
+    ).join("");
   }
 
   function showBanner(title, desc) {

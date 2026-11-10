@@ -204,7 +204,7 @@
     }
   </style>
 </head>
-<body data-page="games">
+<body data-page="game-play">
   <header class="site-header" id="top">
     <div class="container nav-wrap">
       <a href="index.html" class="logo" id="logo-link" aria-label="Tech Quest home">
@@ -263,6 +263,7 @@
 
           <div class="canvas-wrap" id="canvas-wrap">
             <canvas id="game-canvas" width="1120" height="630"></canvas>
+            <div id="world-labels" style="position:absolute; inset:0; pointer-events:none; overflow:hidden; font-family:var(--mono); font-size:11px; font-weight:600;"></div>
 
             <!-- Start / Stage Intro Overlay -->
             <div class="overlay-screen" id="start-overlay">
