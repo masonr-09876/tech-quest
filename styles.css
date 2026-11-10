@@ -286,9 +286,10 @@ p { margin: 0; }
   background: var(--surface-2); color: var(--text);
   padding: .8rem 1.2rem; border-radius: 10px; font-weight: 500; font-size: .92rem;
   box-shadow: 0 16px 40px -12px hsl(220 50% 2% / .9);
-  transition: transform .35s var(--ease);
+  transition: transform .35s var(--ease), opacity .35s, visibility .35s;
+  opacity: 0; visibility: hidden;
 }
-.toast.show { transform: translate(-50%, 0); }
+.toast.show { transform: translate(-50%, 0); opacity: 1; visibility: visible; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 860px) {
