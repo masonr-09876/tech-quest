@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drone Dash | Play on Tech Quest</title>
+  <meta name="description" content="Play Drone Dash in your browser: pilot a tiny delivery drone through a neon city at dusk, dodge skybridges, billboards, traffic and pigeons, and grab packages to build your combo." />
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .dd-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem 2rem;
+    }
+    .dd-title-row h1 {
+      font-family: var(--font);
+      font-size: clamp(2rem, 4.5vw, 3rem);
+      line-height: 1.05;
+      margin: .35rem 0 .6rem;
+      letter-spacing: -.02em;
+    }
+    .dd-pitch {
+      max-width: 62ch;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ---------- Game shell ---------- */
+    .dd-shell {
+      margin-top: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .dd-shell:fullscreen {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-radius: 0;
+      background: var(--bg);
+    }
+    .dd-shell:fullscreen .dd-stage {
+      width: min(100vw, calc((100vh - 52px) * 16 / 9));
+      margin: 0 auto;
+    }
+    .dd-hud {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: .6rem 1.4rem;
+      padding: .7rem 1rem;
+      border-bottom: 1px solid var(--line);
+      font-family: var(--mono);
+      font-size: .8rem;
+    }
+    .dd-hud-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .5rem 1.3rem;
+    }
+    .dd-stat {
+      display: flex;
+      align-items: baseline;
+      gap: .45rem;
+      white-space: nowrap;
+    }
+    .dd-stat-label {
+      color: var(--muted);
+      font-size: .7rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .dd-stat-value {
+      color: var(--text);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .dd-stat-value.is-combo { color: var(--amber); }
+    .dd-meter {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+    }
+    .dd-bar {
+      width: 92px;
+      height: 8px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .dd-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: var(--teal);
+      border-radius: inherit;
+      transition: background-color .2s var(--ease);
+    }
+    .dd-bar-fill.is-boost { background: var(--amber); }
+    .dd-bar-fill.is-low { background: var(--amber); }
+    .dd-bar-fill.is-critical { background: var(--red); }
+    .dd-chip {
+      padding: .1rem .5rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: .68rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .dd-chip.is-on {
+      color: var(--teal);
+      border-color: var(--teal);
+    }
+    .dd-icon-btn {
+      appearance: none;
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: .3rem .6rem;
+      font: inherit;
+      font-size: .74rem;
+      cursor: pointer;
+      transition: border-color .2s var(--ease), background-color .2s var(--ease);
+    }
+    .dd-icon-btn:hover { border-color: var(--muted); background: var(--surface-2); }
+    .dd-icon-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+    .dd-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: var(--bg);
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .dd-canvas-wrap {
+      position: absolute;
+      inset: 0;
+      touch-action: none;
+      cursor: crosshair;
+    }
+    .dd-canvas-wrap canvas { display: block; width: 100%; height: 100%; }
+
+    .dd-popups {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .dd-pop {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: clamp(.7rem, 1.6vw, 1rem);
+      color: var(--text);
+      white-space: nowrap;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, .7);
+      animation: dd-pop .9s var(--ease) forwards;
+    }
+    .dd-pop.is-amber { color: var(--amber); }
+    .dd-pop.is-teal { color: var(--teal); }
+    .dd-pop.is-red { color: var(--red); }
+    @keyframes dd-pop {
+      0% { opacity: 0; transform: translate(-50%, -30%) scale(.85); }
+      15% { opacity: 1; transform: translate(-50%, -60%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -260%) scale(1); }
+    }
+
+    .dd-overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+      background: color-mix(in srgb, var(--bg) 62%, transparent);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      z-index: 3;
+    }
+    .dd-overlay[hidden] { display: none; }
+    .dd-card {
+      width: min(440px, 100%);
+      max-height: 100%;
+      overflow: auto;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.6rem 1.8rem;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .dd-card h2 {
+      font-family: var(--font);
+      font-size: clamp(1.3rem, 3vw, 1.9rem);
+      margin: .2rem 0 .5rem;
+      letter-spacing: -.01em;
+    }
+    .dd-card p { margin: 0 0 1rem; color: var(--muted); line-height: 1.55; font-size: .92rem; }
+    .dd-card .eyebrow { margin: 0; }
+    .dd-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: .6rem;
+    }
+    .dd-results {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .5rem;
+      margin: .4rem 0 1.2rem;
+    }
+    .dd-result {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: .6rem .3rem;
+      background: var(--bg-2);
+    }
+    .dd-result b {
+      display: block;
+      font-family: var(--mono);
+      font-size: 1.05rem;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .dd-result span {
+      font-family: var(--mono);
+      font-size: .64rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .dd-newbest {
+      display: inline-block;
+      margin-bottom: .6rem;
+      padding: .15rem .6rem;
+      border-radius: 999px;
+      border: 1px solid var(--amber);
+      color: var(--amber);
+      font-family: var(--mono);
+      font-size: .7rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .dd-newbest[hidden] { display: none; }
+    .dd-hint {
+      margin-top: .9rem;
+      font-family: var(--mono);
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    .dd-touch-boost {
+      position: absolute;
+      right: 4%;
+      bottom: 7%;
+      width: clamp(56px, 11vw, 84px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: color-mix(in srgb, var(--surface) 78%, transparent);
+      color: var(--amber);
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: .72rem;
+      letter-spacing: .06em;
+      display: none;
+      z-index: 2;
+      touch-action: none;
+    }
+    .dd-touch-boost.is-active { background: var(--amber); color: var(--bg); }
+    .dd-stage.is-touch .dd-touch-boost { display: block; }
+    @media (pointer: coarse) {
+      .dd-touch-boost { display: block; }
+    }
+
+    .dd-error {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    /* ---------- Guide ---------- */
+    .dd-section-head { margin-top: 3.5rem; }
+    .dd-section-head h2 {
+      font-family: var(--font);
+      font-size: clamp(1.4rem, 3vw, 1.9rem);
+      margin: .3rem 0 .4rem;
+      letter-spacing: -.01em;
+    }
+    .dd-section-head p { margin: 0; }
+    .dd-guide {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1rem;
+      margin-top: 1.4rem;
+    }
+    .dd-guide-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1.3rem 1.4rem;
+    }
+    .dd-guide-card h3 {
+      font-family: var(--font);
+      font-size: 1.08rem;
+      margin: 0 0 .5rem;
+    }
+    .dd-guide-card p, .dd-guide-card li {
+      color: var(--muted);
+      font-size: .92rem;
+      line-height: 1.6;
+    }
+    .dd-guide-card p { margin: 0; }
+    .dd-guide-card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: .45rem; }
+    .dd-guide-card li { display: flex; gap: .6rem; align-items: baseline; }
+    .dd-guide-card li b { color: var(--text); font-weight: 600; }
+    .dd-dot {
+      flex: none;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      transform: translateY(-1px);
+      background: var(--muted);
+    }
+    .dd-dot.is-amber { background: var(--amber); }
+    .dd-dot.is-teal { background: var(--teal); }
+    .dd-dot.is-red { background: var(--red); }
+    .dd-dot.is-text { background: var(--text); }
+    .dd-num {
+      display: inline-grid;
+      place-items: center;
+      width: 1.8rem;
+      height: 1.8rem;
+      margin-bottom: .8rem;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      font-family: var(--mono);
+      font-size: .78rem;
+      color: var(--teal);
+    }
+
+    .dd-table-wrap {
+      margin-top: 1.4rem;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+    .dd-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .92rem;
+      min-width: 560px;
+    }
+    .dd-table th, .dd-table td {
+      text-align: left;
+      padding: .85rem 1.1rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+    }
+    .dd-table th {
+      font-family: var(--mono);
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--bg-2);
+    }
+    .dd-table tr:last-child td { border-bottom: 0; }
+    .dd-table td:first-child { color: var(--text); font-weight: 600; }
+    .dd-table td { color: var(--muted); }
+    .dd-kbd {
+      display: inline-block;
+      min-width: 1.6rem;
+      padding: .1rem .45rem;
+      margin: .1rem .1rem;
+      border: 1px solid var(--line);
+      border-bottom-width: 2px;
+      border-radius: 6px;
+      background: var(--bg-2);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: .76rem;
+      text-align: center;
+    }
+
+    @media (max-width: 720px) {
+      .dd-card { padding: 1rem 1.1rem; }
+      .dd-card p.dd-long, .dd-hint { display: none; }
+      .dd-results { margin-bottom: .8rem; }
+      .dd-hud { gap: .4rem .9rem; padding: .6rem .75rem; }
+      .dd-bar { width: 64px; }
+    }
+    @media (max-width: 460px) {
+      .dd-card h2 { font-size: 1.1rem; margin-bottom: .3rem; }
+      .dd-card p { font-size: .8rem; margin-bottom: .6rem; }
+      .dd-result b { font-size: .85rem; }
+    }
+  </style>
+</head>
+<body data-page="game-play">
+  <header class="site-header" id="site-header"></header>
+
+  <main class="page-main">
+    <section class="section">
+      <div class="container">
+        <div class="dd-title-row">
+          <div>
+            <p class="eyebrow">Arcade Flyer · Web Browser</p>
+            <h1>Drone Dash</h1>
+            <p class="dd-pitch">Pilot a tiny delivery drone through a neon city at dusk. Thread the gaps between skyscrapers, skybridges, billboards, flying traffic and pigeon flocks, grab packages to build your combo, and keep the battery topped up as the city speeds past.</p>
+          </div>
+          <a href="games.html" class="btn btn-ghost btn-small">← All Games</a>
+        </div>
+
+        <div class="dd-shell" id="dd-shell">
+          <div class="dd-hud" aria-label="Game status">
+            <div class="dd-hud-group">
+              <div class="dd-stat"><span class="dd-stat-label">Score</span><span class="dd-stat-value" id="dd-score">0</span></div>
+              <div class="dd-stat"><span class="dd-stat-label">Dist</span><span class="dd-stat-value" id="dd-dist">0 m</span></div>
+              <div class="dd-stat"><span class="dd-stat-label">Combo</span><span class="dd-stat-value" id="dd-combo">x1</span></div>
+              <div class="dd-stat"><span class="dd-stat-label">Speed</span><span class="dd-stat-value" id="dd-speed">0 km/h</span></div>
+            </div>
+            <div class="dd-hud-group">
+              <div class="dd-meter" title="Battery">
+                <span class="dd-stat-label">Batt</span>
+                <div class="dd-bar" role="progressbar" aria-label="Battery" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" id="dd-battery-bar"><div class="dd-bar-fill" id="dd-battery"></div></div>
+              </div>
+              <div class="dd-meter" title="Boost">
+                <span class="dd-stat-label">Boost</span>
+                <div class="dd-bar" role="progressbar" aria-label="Boost" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" id="dd-boost-bar"><div class="dd-bar-fill is-boost" id="dd-boost"></div></div>
+              </div>
+              <span class="dd-chip" id="dd-shield">Shield</span>
+              <div class="dd-stat"><span class="dd-stat-label">Best</span><span class="dd-stat-value" id="dd-best">0</span></div>
+              <button class="dd-icon-btn" id="dd-pause-btn" type="button" aria-label="Pause (P)">Pause</button>
+              <button class="dd-icon-btn" id="dd-mute-btn" type="button" aria-label="Mute (M)">Sound: On</button>
+              <button class="dd-icon-btn" id="dd-fs-btn" type="button" aria-label="Fullscreen">Fullscreen</button>
+            </div>
+          </div>
+
+          <div class="dd-stage" id="dd-stage">
+            <div class="dd-canvas-wrap" id="dd-canvas-wrap" aria-label="Drone Dash game canvas" role="img"></div>
+            <div class="dd-popups" id="dd-popups" aria-hidden="true"></div>
+            <button class="dd-touch-boost" id="dd-touch-boost" type="button" aria-label="Boost">BOOST</button>
+
+            <div class="dd-overlay" id="dd-start">
+              <div class="dd-card">
+                <p class="eyebrow">Tech Quest Arcade</p>
+                <h2>Drone Dash</h2>
+                <p class="dd-long">Dodge the city, grab packages for combo points, and collect battery cells to stay airborne. It gets faster the longer you fly.</p>
+                <div class="dd-actions">
+                  <button class="btn" id="dd-play" type="button">Start Flight</button>
+                </div>
+                <div class="dd-hint">WASD / Arrows move · Space boost · P pause · M mute</div>
+              </div>
+            </div>
+
+            <div class="dd-overlay" id="dd-pause" hidden>
+              <div class="dd-card">
+                <p class="eyebrow">Paused</p>
+                <h2>Hovering in place</h2>
+                <p class="dd-long">Take a breather. Your drone will wait.</p>
+                <div class="dd-actions">
+                  <button class="btn" id="dd-resume" type="button">Resume</button>
+                  <button class="btn btn-ghost" id="dd-restart" type="button">Restart</button>
+                </div>
+                <div class="dd-hint">Press P, Esc or Start to resume</div>
+              </div>
+            </div>
+
+            <div class="dd-overlay" id="dd-over" hidden>
+              <div class="dd-card">
+                <p class="eyebrow" id="dd-over-reason">Delivery failed</p>
+                <h2>Game Over</h2>
+                <span class="dd-newbest" id="dd-newbest" hidden>New best score</span>
+                <div class="dd-results">
+                  <div class="dd-result"><b id="dd-final-score">0</b><span>Score</span></div>
+                  <div class="dd-result"><b id="dd-final-dist">0 m</b><span>Distance</span></div>
+                  <div class="dd-result"><b id="dd-final-pkg">0</b><span>Packages</span></div>
+                </div>
+                <div class="dd-actions">
+                  <button class="btn" id="dd-retry" type="button">Retry</button>
+                </div>
+                <div class="dd-hint" id="dd-over-best">Best: 0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dd-section-head">
+          <p class="eyebrow">How to Play</p>
+          <h2>Fly fast, deliver more</h2>
+          <p class="muted">Every few seconds a new row of the city rushes at you. There is always a way through.</p>
+        </div>
+        <div class="dd-guide">
+          <article class="dd-guide-card">
+            <span class="dd-num">01</span>
+            <h3>Weave the gaps</h3>
+            <p>Skyscrapers, skybridges, billboards, crane loads, flying cars and pigeon flocks fill the corridor. Find the open lane and slip through. Clipping something without a shield ends the run.</p>
+          </article>
+          <article class="dd-guide-card">
+            <span class="dd-num">02</span>
+            <h3>Chain deliveries</h3>
+            <p>Each package you grab in a row raises your combo multiplier, up to x8. Let one fly past and the combo resets. Near misses also pay out, multiplied by your combo.</p>
+          </article>
+          <article class="dd-guide-card">
+            <span class="dd-num">03</span>
+            <h3>Mind the battery</h3>
+            <p>Your battery drains every second, a little faster as the city speeds up. Grab teal battery cells to recharge. If it hits zero, you glide down and the run is over.</p>
+          </article>
+          <article class="dd-guide-card">
+            <span class="dd-num">04</span>
+            <h3>Pickups</h3>
+            <ul>
+              <li><span class="dd-dot is-amber"></span><span><b>Package</b>: points and combo</span></li>
+              <li><span class="dd-dot is-teal"></span><span><b>Battery cell</b>: recharge</span></li>
+              <li><span class="dd-dot is-red"></span><span><b>Boost</b>: fills the boost meter</span></li>
+              <li><span class="dd-dot is-text"></span><span><b>Shield</b>: absorbs one crash</span></li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="dd-section-head">
+          <p class="eyebrow">Controls</p>
+          <h2>Keyboard, gamepad or touch</h2>
+          <p class="muted">All input methods work at the same time. Boosting doubles distance points while the meter lasts.</p>
+        </div>
+        <div class="dd-table-wrap">
+          <table class="dd-table">
+            <thead>
+              <tr><th>Action</th><th>Keyboard</th><th>Gamepad</th><th>Touch</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Move</td>
+                <td><span class="dd-kbd">W</span><span class="dd-kbd">A</span><span class="dd-kbd">S</span><span class="dd-kbd">D</span> or <span class="dd-kbd">↑</span><span class="dd-kbd">←</span><span class="dd-kbd">↓</span><span class="dd-kbd">→</span></td>
+                <td><span class="dd-kbd">Left Stick</span> / <span class="dd-kbd">D-Pad</span></td>
+                <td>Drag anywhere to steer (relative)</td>
+              </tr>
+              <tr>
+                <td>Boost</td>
+                <td><span class="dd-kbd">Space</span> or <span class="dd-kbd">Shift</span> (hold)</td>
+                <td><span class="dd-kbd">A</span> (hold)</td>
+                <td>Hold the on-screen <b>Boost</b> button</td>
+              </tr>
+              <tr>
+                <td>Pause / Resume</td>
+                <td><span class="dd-kbd">P</span> or <span class="dd-kbd">Esc</span></td>
+                <td><span class="dd-kbd">Start</span></td>
+                <td>Pause button in the HUD</td>
+              </tr>
+              <tr>
+                <td>Mute</td>
+                <td><span class="dd-kbd">M</span></td>
+                <td>—</td>
+                <td>Sound button in the HUD</td>
+              </tr>
+              <tr>
+                <td>Start / Retry</td>
+                <td><span class="dd-kbd">Enter</span> or <span class="dd-kbd">Space</span></td>
+                <td><span class="dd-kbd">A</span> or <span class="dd-kbd">Start</span></td>
+                <td>Tap the button on screen</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="assets/three.min.js"></script>
+  <script src="drone-dash.js"></script>
+</body>
+</html>

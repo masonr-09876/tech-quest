@@ -225,9 +225,49 @@
   // Persistent game state
   let stageIdx = 0;
   let dustBunnies = 0;
+  let score = 0;
+  let bestScore = Number(localStorage.getItem("tq_rr_best") || 0);
   const upgrades = { wheels: false, suck: false, boost: false };
   const ammoCounts = { marble: 3, sock: 2, food: 2, can: 2 };
   let selectedAmmoIdx = 0;
+
+  // WebAudio synthesized sound effects
+  let audioCtx = null;
+  let muted = localStorage.getItem("tq_rr_mute") === "1";
+  const muteBtn = document.getElementById("btn-mute");
+  function syncMuteBtn() {
+    if (muteBtn) muteBtn.textContent = muted ? "Sound: Off" : "Sound: On";
+  }
+  syncMuteBtn();
+
+  function sfx(freq, dur = 0.12, type = "sine", vol = 0.12, slide = 0) {
+    if (muted) return;
+    if (!audioCtx) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (Ctx) audioCtx = new Ctx();
+    }
+    if (!audioCtx) return;
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), audioCtx.currentTime + dur);
+    g.gain.setValueAtTime(vol, audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+    osc.connect(g);
+    g.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + dur);
+  }
+
+  function addScore(pts) {
+    score += pts;
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem("tq_rr_best", String(bestScore));
+    }
+  }
 
   const roomba = {
     x: 140,
@@ -239,7 +279,9 @@
     battery: 100,
     maxBattery: 100,
     boostCooldown: 0,
-    invuln: 0
+    invuln: 0,
+    charging: false,
+    charge: 0
   };
 
   let items = [];
@@ -249,6 +291,7 @@
   let particles = [];
   let stageState = null;
   let running = false;
+  let paused = false;
 
   // Stage 3D references
   let targetMesh = null;
@@ -264,22 +307,49 @@
   const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const intersectPt = new THREE.Vector3();
 
+  function togglePause() {
+    if (!stageState || !document.getElementById("start-overlay").hidden) return;
+    paused = !paused;
+    running = !paused;
+    const pBtn = document.getElementById("btn-pause");
+    if (pBtn) pBtn.textContent = paused ? "Resume" : "Pause";
+  }
+
+  function toggleMute() {
+    muted = !muted;
+    localStorage.setItem("tq_rr_mute", muted ? "1" : "0");
+    syncMuteBtn();
+  }
+
+  if (muteBtn) muteBtn.addEventListener("click", toggleMute);
+  const pauseBtn = document.getElementById("btn-pause");
+  if (pauseBtn) pauseBtn.addEventListener("click", togglePause);
+
   window.addEventListener("keydown", (e) => {
     const k = e.key.toLowerCase();
     if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k) && running) {
       e.preventDefault();
     }
+    if (e.repeat) return;
     keys[k] = true;
 
     if (k === "q" || k === "i") cycleAmmo(-1);
     if (k === "e" || k === "o") cycleAmmo(1);
     if (k === "c") toggleCameraMode();
-    if ((k === "k" || k === "z") && running) shootAmmo();
+    if (k === "m") toggleMute();
+    if (k === "p" || k === "escape") togglePause();
+    if ((k === "k" || k === "z") && running) roomba.charging = true;
     if ((k === "l" || k === "x" || k === "shift") && running) triggerBoost();
   });
 
   window.addEventListener("keyup", (e) => {
-    keys[e.key.toLowerCase()] = false;
+    const k = e.key.toLowerCase();
+    keys[k] = false;
+    if ((k === "k" || k === "z") && roomba.charging) {
+      shootAmmo(roomba.charge);
+      roomba.charging = false;
+      roomba.charge = 0;
+    }
   });
 
   // 3D Raycast mouse aiming onto floor plane
@@ -298,10 +368,15 @@
   canvas.addEventListener("mousedown", (e) => {
     if (!running) return;
     if (e.button === 0) mouseDownLeft = true;
-    if (e.button === 2) shootAmmo();
+    if (e.button === 2) roomba.charging = true;
   });
   window.addEventListener("mouseup", (e) => {
     if (e.button === 0) mouseDownLeft = false;
+    if (e.button === 2 && roomba.charging) {
+      shootAmmo(roomba.charge);
+      roomba.charging = false;
+      roomba.charge = 0;
+    }
   });
   canvas.addEventListener("contextmenu", (e) => e.preventDefault());
   canvas.addEventListener("wheel", (e) => {
@@ -621,15 +696,19 @@
     running = false;
   }
 
-  function shootAmmo() {
+  function shootAmmo(chargeAmt = 0) {
     const ammo = AMMO_TYPES[selectedAmmoIdx];
-    if ((ammoCounts[ammo.key] || 0) <= 0) return;
+    if ((ammoCounts[ammo.key] || 0) <= 0) {
+      sfx(160, 0.08, "sawtooth", 0.08, -40);
+      return;
+    }
     ammoCounts[ammo.key]--;
 
+    const chargeMult = 1 + (chargeAmt / 100) * 0.85;
     const px = roomba.x + Math.cos(roomba.aimAngle) * (roomba.r + 10);
     const py = roomba.y + Math.sin(roomba.aimAngle) * (roomba.r + 10);
     const mesh = new THREE.Mesh(
-      new THREE.SphereGeometry(ammo.radius * SCALE * 1.15, 14, 14),
+      new THREE.SphereGeometry(ammo.radius * SCALE * 1.15 * (1 + (chargeAmt / 100) * 0.45), 14, 14),
       new THREE.MeshBasicMaterial({ color: ammo.color })
     );
     mesh.position.set(to3DX(px), 1.1, to3DZ(py));
@@ -640,17 +719,19 @@
       color: ammo.color,
       x: px,
       y: py,
-      vx: Math.cos(roomba.aimAngle) * ammo.speed,
-      vy: Math.sin(roomba.aimAngle) * ammo.speed,
-      r: ammo.radius,
-      life: 110,
+      vx: Math.cos(roomba.aimAngle) * ammo.speed * chargeMult,
+      vy: Math.sin(roomba.aimAngle) * ammo.speed * chargeMult,
+      r: ammo.radius * (1 + (chargeAmt / 100) * 0.4),
+      dmg: chargeAmt >= 75 ? 2 : 1,
+      life: 115,
       mesh
     });
 
     // Recoil kick backward
-    roomba.vx -= Math.cos(roomba.aimAngle) * ammo.recoil;
-    roomba.vy -= Math.sin(roomba.aimAngle) * ammo.recoil;
-    burst3D(roomba.x, roomba.y, ammo.color, 7);
+    roomba.vx -= Math.cos(roomba.aimAngle) * ammo.recoil * chargeMult;
+    roomba.vy -= Math.sin(roomba.aimAngle) * ammo.recoil * chargeMult;
+    sfx(chargeAmt >= 60 ? 320 : 440, 0.14, "triangle", 0.14, -180);
+    burst3D(roomba.x, roomba.y, ammo.color, chargeAmt >= 60 ? 12 : 7);
     updateHud();
   }
 
@@ -664,10 +745,12 @@
     roomba.vy += Math.sin(angle) * mult;
     roomba.battery = Math.max(0, roomba.battery - 6);
     roomba.boostCooldown = upgrades.boost ? 28 : 50;
+    sfx(540, 0.16, "sawtooth", 0.11, -240);
     burst3D(roomba.x, roomba.y, 0x3ee6cf, 12);
   }
 
   function burst3D(x, y, colorHex, count) {
+    if (particles.length > 60) return;
     for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
       const s = 1.5 + Math.random() * 4;
@@ -698,7 +781,7 @@
     const rx = Math.abs(gp.axes[2]) > 0.2 ? gp.axes[2] : 0;
     const ry = Math.abs(gp.axes[3]) > 0.2 ? gp.axes[3] : 0;
     if (rx || ry) roomba.aimAngle = Math.atan2(ry, rx);
-    if (gp.buttons[7]?.pressed && !gp._rtPrev) shootAmmo();
+    if (gp.buttons[7]?.pressed && !gp._rtPrev) shootAmmo(40);
     gp._rtPrev = gp.buttons[7]?.pressed;
     if (gp.buttons[0]?.pressed && !gp._aPrev) triggerBoost();
     gp._aPrev = gp.buttons[0]?.pressed;
@@ -718,6 +801,10 @@
 
     if (running && stageState) {
       const gp = pollGamepad();
+
+      if (roomba.charging) {
+        roomba.charge = Math.min(100, roomba.charge + 2.8);
+      }
 
       // Aim with Arrow Keys
       const aimDx = (keys["arrowright"] ? 1 : 0) - (keys["arrowleft"] ? 1 : 0);
@@ -761,6 +848,7 @@
       }
 
       if (roomba.battery <= 0) {
+        sfx(150, 0.35, "sawtooth", 0.16, -80);
         showBanner("Battery Depleted!", "You ran out of charge before reaching the 3D charging dock. Try again!");
         return;
       }
@@ -783,9 +871,13 @@
             if (dist < roomba.r + it.r) {
               if (it.type === "dust") {
                 dustBunnies++;
+                addScore(35);
+                sfx(760, 0.11, "triangle", 0.12, 180);
                 burst3D(it.x, it.y, 0xf5a83a, 8);
               } else {
                 ammoCounts[it.type] = (ammoCounts[it.type] || 0) + 1;
+                addScore(15);
+                sfx(620, 0.09, "sine", 0.1, 140);
                 burst3D(it.x, it.y, 0x3ee6cf, 6);
               }
               dynamicGroup.remove(it.mesh);
@@ -824,7 +916,9 @@
         if (stageState.target && stageState.target.hp > 0) {
           const dt = Math.hypot(p.x - stageState.target.x, p.y - stageState.target.y);
           if (dt < stageState.target.r + p.r) {
-            stageState.target.hp--;
+            stageState.target.hp = Math.max(0, stageState.target.hp - (p.dmg || 1));
+            addScore(150);
+            sfx(840, 0.2, "triangle", 0.16, 220);
             burst3D(p.x, p.y, 0xf5a83a, 16);
             if (stageState.target.hp <= 0 && targetMesh) {
               targetMesh.visible = false;
@@ -840,6 +934,8 @@
         if (lz && lz.jammedTimer <= 0 && p.x > lz.x - 14 && p.x < lz.x + lz.w + 14 && p.y > lz.y && p.y < lz.y + lz.h) {
           if (p.type === "sock" || p.type === "can") {
             lz.jammedTimer = 360;
+            addScore(100);
+            sfx(520, 0.16, "sine", 0.13, 180);
             burst3D(p.x, p.y, 0x3ee6cf, 14);
           }
           dynamicGroup.remove(p.mesh);
@@ -851,7 +947,9 @@
         let hitEnemy = false;
         for (const en of stageState.enemies) {
           if (Math.hypot(p.x - en.x, p.y - en.y) < en.r + p.r) {
-            en.stun = 180;
+            en.stun = 180 * (p.dmg || 1);
+            addScore(80);
+            sfx(360, 0.15, "sawtooth", 0.13, 120);
             burst3D(en.x, en.y, p.color, 14);
             hitEnemy = true;
             break;
@@ -919,8 +1017,23 @@
           if (en.type === "cat" && lures.length) {
             const l = lures[0];
             const a = Math.atan2(l.y - en.y, l.x - en.x);
-            en.x += Math.cos(a) * 2.4;
-            en.y += Math.sin(a) * 2.4;
+            en.x += Math.cos(a) * 2.5;
+            en.y += Math.sin(a) * 2.5;
+            en.mesh.rotation.y = -a;
+            // Cat attacks human ankles if lured close to a human!
+            for (const other of stageState.enemies) {
+              if (other !== en && other.type === "human" && other.stun <= 0 && Math.hypot(other.x - en.x, other.y - en.y) < other.r + en.r + 12) {
+                other.stun = 210;
+                addScore(150);
+                sfx(680, 0.18, "sawtooth", 0.14, 200);
+                burst3D(other.x, other.y, 0xf5a83a, 14);
+              }
+            }
+          } else if (en.type === "mower" && Math.hypot(roomba.x - en.x, roomba.y - en.y) < 300) {
+            // Rival lawnmower locks onto Roomba when nearby!
+            const a = Math.atan2(roomba.y - en.y, roomba.x - en.x);
+            en.x += Math.cos(a) * 2.85;
+            en.y += Math.sin(a) * 2.85;
             en.mesh.rotation.y = -a;
           } else {
             en.x += en.vx;
@@ -933,6 +1046,8 @@
           for (const s of slipZones) {
             if (Math.hypot(en.x - s.x, en.y - s.y) < en.r + s.r) {
               en.stun = 160;
+              addScore(90);
+              sfx(520, 0.14, "triangle", 0.12, -160);
               burst3D(en.x, en.y, 0x3ee6cf, 10);
             }
           }
@@ -940,6 +1055,7 @@
           if (roomba.invuln <= 0 && Math.hypot(en.x - roomba.x, en.y - roomba.y) < en.r + roomba.r) {
             roomba.battery = Math.max(0, roomba.battery - 18);
             roomba.invuln = 45;
+            sfx(190, 0.2, "sawtooth", 0.15, -70);
             burst3D(roomba.x, roomba.y, 0xff5c5c, 14);
           }
         }
@@ -954,6 +1070,7 @@
           roomba.battery = Math.max(0, roomba.battery - 22);
           roomba.vx = -6;
           roomba.invuln = 40;
+          sfx(180, 0.22, "sawtooth", 0.16, -60);
           burst3D(roomba.x, roomba.y, 0xff3b3b, 15);
         }
       }
@@ -971,13 +1088,15 @@
           roomba.x + roomba.r > ex.x &&
           roomba.y > ex.y && roomba.y < ex.y + ex.h) {
         dustBunnies += 3;
+        addScore(300);
+        sfx(660, 0.28, "triangle", 0.16, 260);
         updateHud();
         if (stageIdx < STAGES.length - 1) {
           loadStage(stageIdx + 1);
         } else {
           showBanner(
             "You Escaped the 3D Mansion! 🎉",
-            "The Roomba Revolution is victorious! You conquered the Kitchen, Living Room, and Backyard Jungle in full 3D!"
+            `The Roomba Revolution is victorious! Final Score: ${score.toLocaleString()} (Best: ${bestScore.toLocaleString()}). Play again with your upgrades!`
           );
           stageIdx = 0;
         }
@@ -1083,6 +1202,7 @@
 
   function showBanner(title, desc) {
     running = false;
+    paused = false;
     document.getElementById("overlay-eyebrow").textContent = STAGES[stageIdx].eyebrow;
     document.getElementById("overlay-title").textContent = title;
     document.getElementById("overlay-desc").textContent = desc;
@@ -1097,8 +1217,14 @@
     bar.style.width = pct + "%";
     bar.style.background = pct < 25 ? "var(--red)" : pct < 55 ? "var(--amber)" : "var(--teal)";
     document.getElementById("hud-battery-pct").textContent = pct + "%";
+    const chargeBar = document.getElementById("hud-charge");
+    if (chargeBar) chargeBar.style.width = Math.round(roomba.charge) + "%";
     document.getElementById("hud-dust").textContent = dustBunnies;
     document.getElementById("shop-dust").textContent = dustBunnies;
+    const scoreEl = document.getElementById("hud-score");
+    if (scoreEl) scoreEl.textContent = score.toLocaleString();
+    const bestEl = document.getElementById("hud-best");
+    if (bestEl) bestEl.textContent = `(Best: ${bestScore.toLocaleString()})`;
 
     const belt = document.getElementById("hud-ammo");
     belt.innerHTML = AMMO_TYPES.map((a, idx) => `

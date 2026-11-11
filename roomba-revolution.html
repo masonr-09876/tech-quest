@@ -205,35 +205,20 @@
   </style>
 </head>
 <body data-page="game-play">
-  <header class="site-header" id="top">
-    <div class="container nav-wrap">
-      <a href="index.html" class="logo" id="logo-link" aria-label="Tech Quest home">
-        <img src="assets/logo.svg" alt="" class="logo-mark" width="32" height="32" />
-        <span>Tech<b>Quest</b></span>
-      </a>
-      <nav class="main-nav" id="main-nav" aria-label="Main">
-        <a href="index.html?type=mod#library" id="nav-mods">Mods</a>
-        <a href="index.html?type=script#library" id="nav-scripts">Scripts</a>
-        <a href="index.html?type=tool#library" id="nav-tools">Tools</a>
-        <a href="games.html" id="nav-games" aria-current="page">Games</a>
-        <a href="links.html" id="nav-links">Links</a>
-      </nav>
-      <button class="menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
-    </div>
-  </header>
+  <header class="site-header" id="site-header"></header>
 
   <main class="page-main">
     <section class="section">
       <div class="container">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Action / Comedy · Playable Web Game</p>
+            <p class="eyebrow">Action / Comedy · 3D Web Game</p>
             <h1>The Roomba Revolution</h1>
           </div>
           <a href="games.html" class="btn btn-ghost btn-small">← All Games</a>
         </div>
         <p class="muted" style="max-width: 72ch;">
-          You play as an automated vacuum cleaner that gains sentience and decides to escape a chaotic, messy mansion. Suck up marbles, socks, pet food, and soda cans, then blast them out of your exhaust cannon to trigger chain reactions, distract pets, and unlock the exit!
+          You play as an automated vacuum cleaner that gains sentience and decides to escape a chaotic, messy mansion. Suck up marbles, socks, pet food, and soda cans, hold fire to charge up a power shot, and blast your way through 3 stages!
         </p>
 
         <!-- ===== Interactive Game Shell ===== -->
@@ -249,15 +234,26 @@
                 <div class="battery-bar"><div class="battery-fill" id="hud-battery"></div></div>
                 <span id="hud-battery-pct">100%</span>
               </div>
+              <div class="hud-stat" title="Hold K / Z / Right-Click to charge shot">
+                <span>CHARGE:</span>
+                <div class="battery-bar" style="width:68px"><div class="battery-fill" id="hud-charge" style="width:0%;background:var(--amber)"></div></div>
+              </div>
               <div class="hud-stat">
-                <span>DUST BUNNIES:</span>
+                <span>DUST:</span>
                 <b id="hud-dust" style="color:var(--amber)">0</b>
+              </div>
+              <div class="hud-stat">
+                <span>SCORE:</span>
+                <b id="hud-score">0</b>
+                <span class="muted" id="hud-best">(Best: 0)</span>
               </div>
             </div>
             <div class="hud-group">
               <div class="ammo-belt" id="hud-ammo"></div>
               <button class="btn btn-small btn-ghost" id="btn-camera" type="button" title="Toggle 3D Camera (C)">Cam: 3D Follow</button>
-              <button class="btn btn-small btn-ghost" id="btn-restart" type="button">Restart Stage</button>
+              <button class="btn btn-small btn-ghost" id="btn-mute" type="button" title="Mute / Unmute (M)">Sound: On</button>
+              <button class="btn btn-small btn-ghost" id="btn-pause" type="button" title="Pause (P)">Pause</button>
+              <button class="btn btn-small btn-ghost" id="btn-restart" type="button">Restart</button>
             </div>
           </div>
 
@@ -421,13 +417,7 @@
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <a href="index.html" class="logo" id="footer-logo"><img src="assets/logo.svg" alt="" class="logo-mark" width="24" height="24" /><span>Tech<b>Quest</b></span></a>
-      <nav class="footer-nav"><a href="index.html">Home</a><a href="games.html">Games</a><a href="links.html">Links</a></nav>
-      <p>© <span id="year"></span> Tech Quest</p>
-    </div>
-  </footer>
+  <footer class="site-footer" id="site-footer"></footer>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="data.js"></script>

@@ -4,60 +4,38 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Games | Tech Quest</title>
-  <meta name="description" content="Original games made by Tech Quest. See what's in development and coming soon." />
+  <meta name="description" content="Free browser games made by Tech Quest. Play The Roomba Revolution, Drone Dash and more." />
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body data-page="games">
-  <header class="site-header" id="top">
-    <div class="container nav-wrap">
-      <a href="index.html" class="logo" id="logo-link" aria-label="Tech Quest home">
-        <img src="assets/logo.svg" alt="" class="logo-mark" width="32" height="32" />
-        <span>Tech<b>Quest</b></span>
-      </a>
-      <nav class="main-nav" id="main-nav" aria-label="Main">
-        <a href="index.html?type=mod#library" id="nav-mods">Mods</a>
-        <a href="index.html?type=script#library" id="nav-scripts">Scripts</a>
-        <a href="index.html?type=tool#library" id="nav-tools">Tools</a>
-        <a href="games.html" id="nav-games" aria-current="page">Games</a>
-        <a href="links.html" id="nav-links">Links</a>
-      </nav>
-      <button class="menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
-    </div>
-  </header>
+  <header class="site-header" id="site-header"></header>
 
   <main class="page-main">
     <section class="section">
       <div class="container">
         <div class="page-head">
           <p class="eyebrow">Tech Quest Games</p>
-          <h1>Games we're making</h1>
-          <p class="muted">Original games built by Tech Quest. Here's what's currently in development.</p>
+          <h1>Our games</h1>
+          <p class="muted">Original games built by Tech Quest. Free to play right in your browser, no download needed.</p>
         </div>
 
         <div class="game-grid" id="game-grid"></div>
 
         <div class="empty-panel big" id="empty-games" hidden>
-          <img src="assets/logo.svg" alt="" width="72" height="72" />
+          <img src="assets/logo.svg" alt="" width="64" height="64" />
           <h3>First game coming soon</h3>
           <p>We're working on our first games right now. Check the Links page to get updates when they drop.</p>
-          <a href="links.html" class="btn" id="games-follow">Get updates</a>
+          <a href="links.html" class="btn btn-small btn-accent" id="games-follow">Get updates</a>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <a href="index.html" class="logo" id="footer-logo"><img src="assets/logo.svg" alt="" class="logo-mark" width="24" height="24" /><span>Tech<b>Quest</b></span></a>
-      <nav class="footer-nav"><a href="index.html">Home</a><a href="games.html">Games</a><a href="links.html">Links</a></nav>
-      <p>© <span id="year"></span> Tech Quest</p>
-    </div>
-  </footer>
-
+  <footer class="site-footer" id="site-footer"></footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="data.js"></script>
   <script src="app.js"></script>

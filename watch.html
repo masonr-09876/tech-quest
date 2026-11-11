@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Watch: Movies &amp; Shows | Tech Quest</title>
+  <meta name="description" content="Movies and shows Tech Quest recommends, with trailers, where to watch, and our own videos. Share your favorites with friends." />
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="watch">
+  <header class="site-header" id="site-header"></header>
+
+  <main class="page-main">
+    <section class="section">
+      <div class="container">
+        <div class="page-head">
+          <p class="eyebrow">Watch</p>
+          <h1>Movies &amp; shows</h1>
+          <p class="muted">Movies and shows we recommend, with trailers and where to watch them, plus our own videos. Tap any title to share it with friends.</p>
+        </div>
+
+        <div class="filters" id="watch-filters">
+          <div class="tabs" role="tablist" id="watch-tabs">
+            <button role="tab" class="tab active" data-type="all" id="watch-tab-all">All</button>
+            <button role="tab" class="tab" data-type="movie" id="watch-tab-movie">Movies</button>
+            <button role="tab" class="tab" data-type="show" id="watch-tab-show">Shows</button>
+            <button role="tab" class="tab" data-type="video" id="watch-tab-video">Our videos</button>
+          </div>
+          <div class="filter-right">
+            <span class="section-note" id="watch-count" style="align-self:center"></span>
+            <label for="watch-search" class="sr-only">Search</label>
+            <input type="search" id="watch-search" class="input" placeholder="Search titles, genres…" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="watch-grid" id="watch-grid" aria-live="polite"></div>
+        <p class="empty" id="watch-empty" hidden>Nothing found. Try a different search.</p>
+
+        <div class="empty-panel big" id="empty-watch" hidden>
+          <img src="assets/logo.svg" alt="" width="56" height="56" />
+          <h3>Watch list coming soon</h3>
+          <p>Movie and show picks, trailers and our own videos will show up here.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <dialog class="modal watch-modal" id="watch-modal" aria-labelledby="watch-title">
+    <div class="player" id="watch-player"></div>
+    <div class="modal-inner">
+      <div class="modal-head">
+        <div><p class="eyebrow" id="watch-meta"></p><h3 id="watch-title"></h3></div>
+        <button class="icon-btn" id="watch-close" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-desc" id="watch-desc"></p>
+      <ul class="tag-row" id="watch-tags"></ul>
+      <p class="eyebrow" id="watch-where-label">Where to watch</p>
+      <div class="where" id="watch-where"></div>
+      <div class="modal-foot" style="margin-top:1.2rem">
+        <span class="muted">Share this with friends</span>
+        <button class="btn btn-small btn-accent" id="watch-share" type="button">Share</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

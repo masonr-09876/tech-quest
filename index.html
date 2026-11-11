@@ -3,63 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tech Quest | Mods, Scripts &amp; Tools</title>
-  <meta name="description" content="Tech Quest is the home for game mods, scripts, tools and games. Browse, preview and download everything in one place." />
+  <title>Tech Quest | Mods, Scripts, Games &amp; More</title>
+  <meta name="description" content="Tech Quest is the home for game mods, scripts, tools, free browser games, and movies and shows worth watching." />
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body data-page="home">
-  <header class="site-header" id="top">
-    <div class="container nav-wrap">
-      <a href="index.html" class="logo" id="logo-link" aria-label="Tech Quest home">
-        <img src="assets/logo.svg" alt="" class="logo-mark" width="32" height="32" />
-        <span>Tech<b>Quest</b></span>
-      </a>
-      <nav class="main-nav" id="main-nav" aria-label="Main">
-        <a href="index.html?type=mod#library" data-jump="mod" id="nav-mods">Mods</a>
-        <a href="index.html?type=script#library" data-jump="script" id="nav-scripts">Scripts</a>
-        <a href="index.html?type=tool#library" data-jump="tool" id="nav-tools">Tools</a>
-        <a href="games.html" id="nav-games">Games</a>
-        <a href="links.html" id="nav-links">Links</a>
-        <a href="links.html" class="btn btn-small" id="nav-join">Join Community</a>
-      </nav>
-      <button class="menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false"><span></span><span></span></button>
-    </div>
-  </header>
+  <header class="site-header" id="site-header"></header>
 
   <main>
+    <!-- Hero -->
     <section class="hero">
-      <div class="hero-bg" aria-hidden="true"></div>
-      <div class="container hero-inner">
-        <p class="eyebrow">Mods · Scripts · Tools · Games</p>
-        <h1>Level up every game you play.</h1>
-        <p class="hero-sub">Tech Quest is the main hub for mods, scripts, tools and original games. Free to download.</p>
+      <div class="container hero-grid">
+        <div>
+          <p class="eyebrow">Mods · Scripts · Games · Watch</p>
+          <h1>Level up every game you play.</h1>
+          <p class="hero-sub">Tech Quest is the main hub for mods, scripts, tools, free browser games, and movies and shows worth watching.</p>
 
-        <form class="hero-search" id="hero-search" role="search">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input type="search" id="hero-search-input" placeholder="Search mods, scripts, games…" autocomplete="off" />
-          <button type="submit" class="btn" id="hero-search-btn">Search</button>
-        </form>
+          <form class="hero-search" id="hero-search" role="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <label for="hero-search-input" class="sr-only">Search</label>
+            <input type="search" id="hero-search-input" placeholder="Search mods, scripts, games, movies…" autocomplete="off" />
+            <button type="submit" class="btn btn-small" id="hero-search-btn">Search</button>
+          </form>
 
-        <dl class="stats" id="stats" hidden>
-          <div><dt id="stat-mods">0</dt><dd>Mods</dd></div>
-          <div><dt id="stat-scripts">0</dt><dd>Scripts</dd></div>
-          <div><dt id="stat-tools">0</dt><dd>Tools</dd></div>
-          <div><dt id="stat-games">0</dt><dd>Games</dd></div>
-        </dl>
+          <dl class="stats" id="stats" hidden>
+            <div><dt id="stat-games">0</dt><dd>Games</dd></div>
+            <div><dt id="stat-mods">0</dt><dd>Mods</dd></div>
+            <div><dt id="stat-scripts">0</dt><dd>Scripts</dd></div>
+            <div><dt id="stat-watch">0</dt><dd>To watch</dd></div>
+          </dl>
+        </div>
+
+        <a class="featured" id="featured" href="games.html" hidden></a>
       </div>
     </section>
 
+    <!-- Explore -->
+    <section class="section" id="explore-section">
+      <div class="container">
+        <div class="section-head">
+          <div><p class="eyebrow">Explore</p><h2>Everything on Tech Quest</h2></div>
+        </div>
+        <nav class="explore" id="explore" aria-label="Sections"></nav>
+      </div>
+    </section>
+
+    <!-- Games -->
+    <section class="section" id="home-games" hidden>
+      <div class="container">
+        <div class="section-head">
+          <div><p class="eyebrow">Free browser games</p><h2>Play our games</h2></div>
+          <a href="games.html" class="link-more" id="home-games-more">All games →</a>
+        </div>
+        <div class="game-grid" id="home-game-grid"></div>
+      </div>
+    </section>
+
+    <!-- Library -->
     <section class="section" id="library">
       <div class="container">
         <div class="section-head">
-          <div>
-            <p class="eyebrow">The Library</p>
-            <h2>Browse everything</h2>
-          </div>
+          <div><p class="eyebrow">The library</p><h2>Mods, scripts &amp; tools</h2></div>
           <p class="section-note"><span id="result-count">0</span> results</p>
         </div>
 
@@ -79,6 +87,7 @@
                 <option value="name">A to Z</option>
               </select>
             </label>
+            <label for="library-search" class="sr-only">Filter</label>
             <input type="search" id="library-search" class="input" placeholder="Filter…" autocomplete="off" />
           </div>
         </div>
@@ -86,26 +95,23 @@
         <div class="grid" id="item-grid" aria-live="polite"></div>
 
         <div class="empty-panel" id="empty-library" hidden>
-          <img src="assets/logo.svg" alt="" width="56" height="56" />
+          <img src="assets/logo.svg" alt="" width="48" height="48" />
           <h3>First drops coming soon</h3>
           <p>Mods, scripts and tools will show up here as soon as they're released.</p>
-          <a href="links.html" class="btn btn-ghost" id="empty-follow">Follow for updates</a>
+          <a href="links.html" class="btn btn-small btn-ghost" id="empty-follow">Follow for updates</a>
         </div>
         <p class="empty" id="empty-state" hidden>Nothing found. Try a different search or filter.</p>
       </div>
     </section>
 
-    <section class="section section-alt" id="games-teaser">
-      <div class="container teaser">
-        <div>
-          <p class="eyebrow">Original games · Out Now</p>
-          <h2>Play The Roomba Revolution in your browser</h2>
-          <p class="muted">Suck up marbles, stray socks, pet food, and soda cans to blast your way out of a chaotic mansion.</p>
+    <!-- Watch -->
+    <section class="section" id="home-watch" hidden>
+      <div class="container">
+        <div class="section-head">
+          <div><p class="eyebrow">Watch</p><h2>Movies &amp; shows</h2></div>
+          <a href="watch.html" class="link-more" id="home-watch-more">See all →</a>
         </div>
-        <div style="display:flex; gap:.75rem; flex-wrap:wrap;">
-          <a href="roomba-revolution.html" class="btn" id="teaser-play-btn">Play Now →</a>
-          <a href="games.html" class="btn btn-ghost" id="teaser-games-btn">All Games</a>
-        </div>
+        <div class="watch-grid" id="home-watch-grid"></div>
       </div>
     </section>
 
@@ -118,20 +124,15 @@
 
     <section class="section" id="roadmap" hidden>
       <div class="container">
-        <div class="section-head"><div><p class="eyebrow">More stuff on the way</p><h2>Coming soon</h2></div></div>
+        <div class="section-head"><div><p class="eyebrow">More on the way</p><h2>Coming soon</h2></div></div>
         <ol class="roadmap" id="roadmap-list"></ol>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <a href="index.html" class="logo" id="footer-logo"><img src="assets/logo.svg" alt="" class="logo-mark" width="24" height="24" /><span>Tech<b>Quest</b></span></a>
-      <nav class="footer-nav"><a href="index.html">Home</a><a href="games.html">Games</a><a href="links.html">Links</a></nav>
-      <p>© <span id="year"></span> Tech Quest</p>
-    </div>
-  </footer>
+  <footer class="site-footer" id="site-footer"></footer>
 
+  <!-- Item detail modal -->
   <dialog class="modal" id="detail-modal" aria-labelledby="modal-title">
     <div class="modal-head">
       <div><p class="eyebrow" id="modal-meta"></p><h3 id="modal-title"></h3></div>
@@ -145,7 +146,26 @@
     </div>
     <div class="modal-foot">
       <span class="muted" id="modal-stats"></span>
-      <a href="#" class="btn" id="modal-download">Download</a>
+      <a href="#" class="btn btn-small btn-accent" id="modal-download">Download</a>
+    </div>
+  </dialog>
+
+  <!-- Watch modal -->
+  <dialog class="modal watch-modal" id="watch-modal" aria-labelledby="watch-title">
+    <div class="player" id="watch-player"></div>
+    <div class="modal-inner">
+      <div class="modal-head">
+        <div><p class="eyebrow" id="watch-meta"></p><h3 id="watch-title"></h3></div>
+        <button class="icon-btn" id="watch-close" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-desc" id="watch-desc"></p>
+      <ul class="tag-row" id="watch-tags"></ul>
+      <p class="eyebrow" id="watch-where-label">Where to watch</p>
+      <div class="where" id="watch-where"></div>
+      <div class="modal-foot" style="margin-top:1.2rem">
+        <span class="muted">Share this with friends</span>
+        <button class="btn btn-small btn-accent" id="watch-share" type="button">Share</button>
+      </div>
     </div>
   </dialog>
 
