@@ -9,8 +9,42 @@
 
   const ITEMS = window.TQ_ITEMS || [];
   const GAMES = window.TQ_GAMES || [];
-  const WATCH = window.TQ_WATCH || [];
   const LINKS = window.TQ_LINKS || [];
+
+  const STORAGE_WATCH_KEY = "tq_shared_watch_v1";
+  function loadUserWatch() {
+    try {
+      const raw = localStorage.getItem(STORAGE_WATCH_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  function saveUserWatch(list) {
+    try { localStorage.setItem(STORAGE_WATCH_KEY, JSON.stringify(list)); } catch {}
+  }
+
+  let userWatch = loadUserWatch();
+
+  // Support incoming ?share=base64url shared movie/show links
+  try {
+    const sp = new URLSearchParams(location.search);
+    const sharedParam = sp.get("share");
+    if (sharedParam) {
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(sharedParam))));
+      if (decoded && decoded.id && decoded.title) {
+        decoded._userAdded = true;
+        if (!userWatch.some((x) => x.id === decoded.id) && !(window.TQ_WATCH || []).some((x) => x.id === decoded.id)) {
+          userWatch.unshift(decoded);
+          saveUserWatch(userWatch);
+        }
+      }
+    }
+  } catch {}
+
+  const getWatchList = () => [...(window.TQ_WATCH || []), ...userWatch];
+  let WATCH = getWatchList();
 
   /* ======================= HEADER & FOOTER ======================= */
   const NAV = [
@@ -134,21 +168,40 @@
     return m ? m[1] : /^[\w-]{11}$/.test(v) ? v : "";
   }
 
+  function buildShareUrl(w) {
+    const url = new URL(location.href.split("#")[0]);
+    url.pathname = url.pathname.replace(/[^/]*$/, "watch.html");
+    url.search = "?id=" + encodeURIComponent(w.id);
+    if (w._userAdded) {
+      try {
+        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(w))));
+        url.search += "&share=" + encodeURIComponent(encoded);
+      } catch {}
+    }
+    return url.toString();
+  }
+
   /* Watch detail modal (used on Home and Watch pages) */
-  function setupWatchModal() {
+  function setupWatchModal(onChanged) {
     const modal = $("#watch-modal");
     if (!modal) return () => {};
     const player = $("#watch-player");
+    const delBtn = $("#watch-delete");
     const close = () => modal.close();
     modal.addEventListener("close", () => {
       player.innerHTML = ""; // stops playback
       const url = new URL(location.href);
-      if (url.searchParams.has("id")) { url.searchParams.delete("id"); history.replaceState(null, "", url); }
+      if (url.searchParams.has("id") || url.searchParams.has("share")) {
+        url.searchParams.delete("id");
+        url.searchParams.delete("share");
+        history.replaceState(null, "", url);
+      }
     });
     $("#watch-close").addEventListener("click", close);
     modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
 
     return function open(id) {
+      WATCH = getWatchList();
       const w = WATCH.find((x) => x.id === id);
       if (!w) return;
       const yt = youtubeId(w.trailer);
@@ -164,12 +217,18 @@
       $("#watch-where").innerHTML = (w.where || []).map((s) =>
         `<a class="btn btn-small btn-ghost" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.name)} ↗</a>`).join("");
       $("#watch-where-label").hidden = !(w.where || []).length;
-      $("#watch-share").onclick = () => {
-        const url = new URL(location.href.split("#")[0]);
-        url.pathname = url.pathname.replace(/[^/]*$/, "watch.html");
-        url.search = "?id=" + encodeURIComponent(w.id);
-        shareLink(url.toString(), w.title);
-      };
+      $("#watch-share").onclick = () => shareLink(buildShareUrl(w), w.title);
+      if (delBtn) {
+        delBtn.hidden = !w._userAdded;
+        delBtn.onclick = () => {
+          userWatch = userWatch.filter((x) => x.id !== w.id);
+          saveUserWatch(userWatch);
+          WATCH = getWatchList();
+          close();
+          if (typeof onChanged === "function") onChanged();
+          toast("Removed from Watch list");
+        };
+      }
       const url = new URL(location.href);
       if (page === "watch") { url.searchParams.set("id", w.id); history.replaceState(null, "", url); }
       modal.showModal();
@@ -402,23 +461,26 @@
     const params = new URLSearchParams(location.search);
     const state = { type: params.get("type") || "all", q: params.get("q") || "" };
     const grid = $("#watch-grid");
-    const open = setupWatchModal();
-
-    if (!WATCH.length) {
-      $("#watch-filters").hidden = true;
-      $("#empty-watch").hidden = false;
-      return;
-    }
-
-    const counts = { all: WATCH.length, movie: 0, show: 0, video: 0 };
-    WATCH.forEach((w) => { counts[w.type] = (counts[w.type] || 0) + 1; });
-    document.querySelectorAll("#watch-tabs .tab").forEach((t) => {
-      const n = counts[t.dataset.type] || 0;
-      if (t.dataset.type !== "all" && !n) t.hidden = true;
-    });
-    $("#watch-search").value = state.q;
 
     function render() {
+      WATCH = getWatchList();
+      if (!WATCH.length) {
+        $("#watch-filters").hidden = true;
+        $("#empty-watch").hidden = false;
+        $("#watch-empty").hidden = true;
+        grid.innerHTML = "";
+        return;
+      }
+      $("#watch-filters").hidden = false;
+      $("#empty-watch").hidden = true;
+
+      const counts = { all: WATCH.length, movie: 0, show: 0, video: 0 };
+      WATCH.forEach((w) => { counts[w.type] = (counts[w.type] || 0) + 1; });
+      document.querySelectorAll("#watch-tabs .tab").forEach((t) => {
+        const n = counts[t.dataset.type] || 0;
+        t.hidden = t.dataset.type !== "all" && !n;
+      });
+
       const q = state.q.trim().toLowerCase();
       const list = WATCH.filter((w) =>
         (state.type === "all" || w.type === state.type) &&
@@ -427,14 +489,84 @@
       $("#watch-empty").hidden = list.length > 0;
       $("#watch-count").textContent = `${list.length} title${list.length === 1 ? "" : "s"}`;
     }
+
+    const open = setupWatchModal(render);
+
     const setType = (type) => {
       state.type = type;
       document.querySelectorAll("#watch-tabs .tab").forEach((t) => t.classList.toggle("active", t.dataset.type === type));
       render();
     };
+    $("#watch-search").value = state.q;
     $("#watch-tabs").addEventListener("click", (e) => { const t = e.target.closest(".tab"); if (t) setType(t.dataset.type); });
     $("#watch-search").addEventListener("input", (e) => { state.q = e.target.value; render(); });
     grid.addEventListener("click", (e) => { const c = e.target.closest(".watch-card"); if (c) open(c.dataset.id); });
+
+    // Add / Share Movie or Show Modal
+    const addModal = $("#add-watch-modal");
+    const addForm = $("#add-watch-form");
+    const openAddModal = () => addModal && addModal.showModal();
+    $("#btn-add-watch")?.addEventListener("click", openAddModal);
+    $("#btn-add-watch-empty")?.addEventListener("click", openAddModal);
+    $("#add-watch-close")?.addEventListener("click", () => addModal?.close());
+    addModal?.addEventListener("click", (e) => { if (e.target === addModal) addModal.close(); });
+
+    function readFormEntry() {
+      const fd = new FormData(addForm);
+      const title = (fd.get("title") || "").toString().trim();
+      const type = (fd.get("type") || "movie").toString();
+      const year = Number(fd.get("year")) || undefined;
+      const score = Number(fd.get("score")) || undefined;
+      const genreStr = (fd.get("genre") || "").toString().trim();
+      const genre = genreStr ? genreStr.split(",").map((g) => g.trim()).filter(Boolean) : [];
+      const poster = (fd.get("poster") || "").toString().trim() || undefined;
+      const trailerRaw = (fd.get("trailer") || "").toString().trim();
+      const isDirectVideo = /\.(mp4|webm|ogg)(\?|$)/i.test(trailerRaw);
+      const whereName = (fd.get("whereName") || "").toString().trim();
+      const whereUrl = (fd.get("whereUrl") || "").toString().trim();
+      const where = whereUrl ? [{ name: whereName || "Watch now", url: whereUrl }] : [];
+      const desc = (fd.get("desc") || "").toString().trim();
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "watch-item";
+      const id = `${slug}-${Date.now().toString(36).slice(-4)}`;
+      return {
+        id,
+        type,
+        title,
+        ...(year ? { year } : {}),
+        ...(score ? { score } : {}),
+        ...(genre.length ? { genre } : {}),
+        ...(poster ? { poster } : {}),
+        ...(desc ? { desc } : {}),
+        ...(trailerRaw && !isDirectVideo ? { trailer: trailerRaw } : {}),
+        ...(trailerRaw && isDirectVideo ? { video: trailerRaw } : {}),
+        ...(where.length ? { where } : {}),
+      };
+    }
+
+    $("#add-watch-copy-code")?.addEventListener("click", async () => {
+      if (!addForm.reportValidity()) return;
+      const entry = readFormEntry();
+      const snippet = JSON.stringify(entry, null, 2) + ",";
+      try {
+        await navigator.clipboard.writeText(snippet);
+        toast("Copied entry for data.js!");
+      } catch {
+        toast("Couldn't copy to clipboard");
+      }
+    });
+
+    addForm?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const entry = readFormEntry();
+      entry._userAdded = true;
+      userWatch.unshift(entry);
+      saveUserWatch(userWatch);
+      addForm.reset();
+      addModal.close();
+      setType("all");
+      open(entry.id);
+      shareLink(buildShareUrl(entry), entry.title);
+    });
 
     setType(state.type);
     if (params.get("id")) open(params.get("id"));

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Watch: Movies &amp; Shows | Tech Quest</title>
-  <meta name="description" content="Movies and shows Tech Quest recommends, with trailers, where to watch, and our own videos. Share your favorites with friends." />
+  <meta name="description" content="Share and watch movies, shows, trailers, and videos on Tech Quest." />
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,10 +17,13 @@
   <main class="page-main">
     <section class="section">
       <div class="container">
-        <div class="page-head">
-          <p class="eyebrow">Watch</p>
-          <h1>Movies &amp; shows</h1>
-          <p class="muted">Movies and shows we recommend, with trailers and where to watch them, plus our own videos. Tap any title to share it with friends.</p>
+        <div class="section-head" style="margin-bottom:2rem">
+          <div class="page-head" style="margin-bottom:0">
+            <p class="eyebrow">Watch &amp; Share</p>
+            <h1>Movies &amp; shows</h1>
+            <p class="muted">Share movies, shows, and videos with trailers and where to watch them.</p>
+          </div>
+          <button class="btn btn-accent" id="btn-add-watch" type="button">+ Share a movie or show</button>
         </div>
 
         <div class="filters" id="watch-filters">
@@ -42,8 +45,9 @@
 
         <div class="empty-panel big" id="empty-watch" hidden>
           <img src="assets/logo.svg" alt="" width="56" height="56" />
-          <h3>Watch list coming soon</h3>
-          <p>Movie and show picks, trailers and our own videos will show up here.</p>
+          <h3>No movies or shows shared yet</h3>
+          <p>Add your own movies, shows, or videos using the button below (or in <code>data.js</code>) and share them with friends.</p>
+          <button class="btn btn-small btn-accent" id="btn-add-watch-empty" type="button">+ Share a movie or show</button>
         </div>
       </div>
     </section>
@@ -51,6 +55,7 @@
 
   <footer class="site-footer" id="site-footer"></footer>
 
+  <!-- Watch Player Modal -->
   <dialog class="modal watch-modal" id="watch-modal" aria-labelledby="watch-title">
     <div class="player" id="watch-player"></div>
     <div class="modal-inner">
@@ -63,10 +68,82 @@
       <p class="eyebrow" id="watch-where-label">Where to watch</p>
       <div class="where" id="watch-where"></div>
       <div class="modal-foot" style="margin-top:1.2rem">
-        <span class="muted">Share this with friends</span>
-        <button class="btn btn-small btn-accent" id="watch-share" type="button">Share</button>
+        <div style="display:flex; gap:.5rem; align-items:center;">
+          <span class="muted">Share this with friends</span>
+          <button class="btn btn-small btn-ghost" id="watch-delete" type="button" hidden>Remove</button>
+        </div>
+        <button class="btn btn-small btn-accent" id="watch-share" type="button">Copy share link</button>
       </div>
     </div>
+  </dialog>
+
+  <!-- Add / Share Movie or Show Modal -->
+  <dialog class="modal" id="add-watch-modal" aria-labelledby="add-watch-heading">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Share on Tech Quest</p>
+        <h3 id="add-watch-heading">Add a movie, show, or video</h3>
+      </div>
+      <button class="icon-btn" id="add-watch-close" type="button" aria-label="Close">✕</button>
+    </div>
+    <form id="add-watch-form" class="watch-form">
+      <div class="form-row">
+        <label class="form-field">
+          <span>Title *</span>
+          <input type="text" name="title" class="input" required placeholder="e.g. My Favorite Movie" />
+        </label>
+        <label class="form-field">
+          <span>Type</span>
+          <select name="type" class="input">
+            <option value="movie">Movie</option>
+            <option value="show">Show</option>
+            <option value="video">Our video</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="form-field">
+          <span>Year (optional)</span>
+          <input type="number" name="year" class="input" placeholder="2026" min="1900" max="2099" />
+        </label>
+        <label class="form-field">
+          <span>Rating / Score out of 5 (optional)</span>
+          <input type="number" name="score" class="input" placeholder="4.8" step="0.1" min="0" max="5" />
+        </label>
+      </div>
+      <div class="form-row">
+        <label class="form-field">
+          <span>Genres (comma-separated, optional)</span>
+          <input type="text" name="genre" class="input" placeholder="Sci-Fi, Action" />
+        </label>
+        <label class="form-field">
+          <span>Poster image URL (optional)</span>
+          <input type="url" name="poster" class="input" placeholder="https://…" />
+        </label>
+      </div>
+      <label class="form-field">
+        <span>YouTube Trailer URL / Video ID or .mp4 URL (optional)</span>
+        <input type="text" name="trailer" class="input" placeholder="https://www.youtube.com/watch?v=…" />
+      </label>
+      <div class="form-row">
+        <label class="form-field">
+          <span>Where to watch name (optional)</span>
+          <input type="text" name="whereName" class="input" placeholder="e.g. YouTube, Netflix" />
+        </label>
+        <label class="form-field">
+          <span>Where to watch link (optional)</span>
+          <input type="url" name="whereUrl" class="input" placeholder="https://…" />
+        </label>
+      </div>
+      <label class="form-field">
+        <span>Why watch it / Description (optional)</span>
+        <textarea name="desc" class="input" rows="3" placeholder="What makes this movie, show, or video worth watching?"></textarea>
+      </label>
+      <div class="modal-foot" style="margin-top:.6rem">
+        <button type="button" class="btn btn-small btn-ghost" id="add-watch-copy-code">Copy for data.js</button>
+        <button type="submit" class="btn btn-small btn-accent">Save &amp; Share</button>
+      </div>
+    </form>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
